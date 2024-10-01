@@ -1,0 +1,23 @@
+---
+title: ""
+author: "William Qian"
+date: "October 2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message = FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(gtsummary)
+
+```
+
+# Abstract
+
+# Introduction
+
+# Code Appendix 
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+
+```
