@@ -101,7 +101,21 @@ marathon_data <- merge(marathon_data, marathon_dates, by = c("Race", "Year"))
 # calculate the record of each runner
 marathon_data$CR <- (1 + marathon_data$CR_PERCENTAGE * 0.01) * marathon_data$CR
 
+marathon_data <- marathon_data %>%
+  mutate(Race = case_when(
+    Race == 0 ~ "Boston",
+    Race == 1 ~ "Chicago",
+    Race == 2 ~ "NYC",
+    Race == 3 ~ "Twin Cities",
+    Race == 4 ~ "Grandma"
+  ),
+  Sex = case_when(
+    Sex == 1 ~ "Male",
+    Sex == 0 ~ "Female"
+  ))
+
 ```
+
 First, we will check for missing values and patterns in the data. We can easily find that there are some weather data missing in the dataset. 
 
 ```{r missing_pattern, fig.width = 15}
@@ -117,7 +131,6 @@ marathon_data %>%
   summarise(missing_percentage = sum(is.na(Flag)) / n()) %>%
   pivot_wider(names_from="Race", values_from = missing_percentage) %>%
   arrange(Year) %>%
-  rename(Boston = 2, Chicago = 3, NYC = 4, `Twin Cities` = 5, Grandmas = 6) %>%
   replace_na(list(Boston = 0, Chicago = 0, NYC = 0, `Twin Cities` = 0, Grandmas = 0)) %>%
   kable(caption = "Missing Percentage of Weather Data in Each Marathon by Year")
 
@@ -130,6 +143,22 @@ marathon_data <- marathon_data %>% filter(!is.na(Flag))
 ```
 
 # Data Analysis
+
+```{r fig.width = 8, fig.height = 10}
+ggplot(marathon_data, aes(x = as.factor(Year), y = CR, fill = Sex)) +
+  geom_boxplot() +
+  facet_wrap(~ Race, scales = "free_y", ncol=2) +
+  labs(title = "Course Record Comparison by Sex",
+       x = "Year", 
+       y = "CR",
+       fill = "Sex") +
+  theme_minimal() + 
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    legend.position = "top"
+  )
+
+```
 
 
 # Code Appendix 
