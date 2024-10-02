@@ -7,14 +7,130 @@ output: pdf_document
 
 ```{r setup, include=FALSE, message = FALSE, echo = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(tidyverse)
+library(mice, warn.conflicts = FALSE)
+library(naniar)
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(readxl)
+library(ggpubr)
 library(gtsummary)
+library(GGally)
+library(ggcorrplot)
+library(knitr)
+library(kableExtra)
+library(lubridate)
+
+```
+
+```{r load_data}
+# Load data
+marathon_data <- read.csv("../Data/project1.csv")
+aqi_values <- read.csv("../Data/aqi_values.csv")
+course_record <- read.csv("../Data/course_record.csv")
+marathon_dates <- read.csv("../Data/marathon_dates.csv")
 
 ```
 
 # Abstract
 
 # Introduction
+
+# Data Preprocessing
+
+```{r data_intro}
+# rename the column names that are too long to follow.
+colnames(marathon_data)[1] <- "Race"
+colnames(marathon_data)[3] <- "Sex"
+colnames(marathon_data)[5] <- "Age"
+colnames(marathon_data)[6] <- "CR_PERCENTAGE"
+colnames(marathon_data)[7] <- "TD"
+colnames(marathon_data)[8] <- "TW"
+colnames(marathon_data)[9] <- "RH"
+colnames(marathon_data)[10] <- "TG"
+colnames(marathon_data)[11] <- "SR"
+
+# data type conversion
+marathon_data$Year <- as.factor(marathon_data$Year)
+marathon_data$Race <- as.factor(marathon_data$Race)
+marathon_data$Sex <- as.factor(marathon_data$Sex)
+marathon_data$Flag <- as.factor(marathon_data$Flag)
+
+marathon_data$Flag[marathon_data$Flag == ""] <- NA
+
+# Check the dimension of the data
+dim(marathon_data)
+
+# replace marathon name with code name in marathon_dates
+marathon_dates$marathon[marathon_dates$marathon == "Boston"] <- 0
+marathon_dates$marathon[marathon_dates$marathon == "Chicago"] <- 1
+marathon_dates$marathon[marathon_dates$marathon == "NYC"] <- 2
+marathon_dates$marathon[marathon_dates$marathon == "Twin Cities"] <- 3
+marathon_dates$marathon[marathon_dates$marathon == "Grandmas"] <- 4
+marathon_dates$marathon <- as.factor(marathon_dates$marathon)
+colnames(marathon_dates)[1] <- "Race"
+
+# rename date and year columns in marathon_dates
+colnames(marathon_dates)[2] <- "Date"
+colnames(marathon_dates)[3] <- "Year"
+
+# replace marathon name with code name in course_record
+course_record$Race[course_record$Race == "B"] <- 0
+course_record$Race[course_record$Race == "C"] <- 1
+course_record$Race[course_record$Race == "NY"] <- 2
+course_record$Race[course_record$Race == "TC"] <- 3
+course_record$Race[course_record$Race == "D"] <- 4
+course_record$Race <- as.factor(course_record$Race)
+
+# replace gender in course_record
+course_record$Gender[course_record$Gender == "M"] <- 1
+course_record$Gender[course_record$Gender == "F"] <- 0
+course_record$Gender <- as.factor(course_record$Gender)
+colnames(course_record)[4] <- "Sex"
+
+# Transform records in course_record into seconds
+course_record$CR <- period_to_seconds(hms(course_record$CR))
+
+# Join course_record and marathon_data
+marathon_data <- merge(marathon_data, course_record, by = c("Race", "Year", "Sex"))
+
+# Join marathon_data and marathon_dates
+marathon_data <- merge(marathon_data, marathon_dates, by = c("Race", "Year"))
+
+# calculate the record of each runner
+marathon_data$CR <- (1 + marathon_data$CR_PERCENTAGE * 0.01) * marathon_data$CR
+
+```
+First, we will check for missing values and patterns in the data. We can easily find that there are some weather data missing in the dataset. 
+
+```{r missing_pattern, fig.width = 15}
+# Check for missing values and patterns
+vis_miss(marathon_data)
+
+```
+
+```{r}
+# Check the missing percentage of weather data in each marathon by year
+marathon_data %>%
+  group_by(Race, Year) %>%
+  summarise(missing_percentage = sum(is.na(Flag)) / n()) %>%
+  pivot_wider(names_from="Race", values_from = missing_percentage) %>%
+  arrange(Year) %>%
+  rename(Boston = 2, Chicago = 3, NYC = 4, `Twin Cities` = 5, Grandmas = 6) %>%
+  replace_na(list(Boston = 0, Chicago = 0, NYC = 0, `Twin Cities` = 0, Grandmas = 0)) %>%
+  kable(caption = "Missing Percentage of Weather Data in Each Marathon by Year")
+
+```
+
+```{r}
+# remove missing data
+marathon_data <- marathon_data %>% filter(!is.na(Flag))
+
+```
+
+# Data Analysis
+
 
 # Code Appendix 
 
