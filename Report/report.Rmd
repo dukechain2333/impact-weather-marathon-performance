@@ -126,7 +126,9 @@ First, we will check for missing values and patterns in the data. We can easily 
 
 ```{r missing_pattern, fig.width = 15}
 # Check for missing values and patterns
-vis_miss(marathon_data)
+miss_plot <- vis_miss(marathon_data)
+ggsave("../Plots/missing_values_plot.png", plot = miss_plot, width = 15, dpi = 300)
+miss_plot
 
 ```
 
@@ -151,7 +153,7 @@ marathon_data <- marathon_data %>% filter(!is.na(Flag))
 # Data Analysis
 
 ```{r fig.width = 10, fig.height = 8}
-ggplot(marathon_data, aes(x = Age_group, fill = Age_group)) +
+participants_age_plot <- ggplot(marathon_data, aes(x = Age_group, fill = Age_group)) +
   geom_bar() +
   facet_wrap(~ Race) +
   scale_fill_viridis_d() +
@@ -161,6 +163,10 @@ ggplot(marathon_data, aes(x = Age_group, fill = Age_group)) +
        fill = "Age Group") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("../Plots/participants_age_plot.png", plot = participants_age_plot, width = 10, height = 8, dpi = 300)
+participants_age_plot
+
 ```
 
 ```{r}
@@ -170,7 +176,7 @@ marathon_data <- marathon_data %>%
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
+sex_distribution_race <- ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
   geom_bar(position = "dodge", alpha = 0.7) +
   facet_wrap(~ Race, scales = "free_y") +
   labs(title = "Sex Distribution by Race",
@@ -182,10 +188,13 @@ ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
     axis.text.x = element_text(face = "italic"),
     legend.position = "none"
   )
+ggsave("../Plots/sex_distribution_race.png", plot = sex_distribution_race, width = 10, height = 8, dpi = 300)
+sex_distribution_race
+
 ```
 
 ```{r fig.width = 8, fig.height = 5}
-ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
+cr_distribution_plot <- ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
   geom_split_violin() +
   labs(title = "Distribution of Completion Time Percentage",
        y = "CR Percentage") +
@@ -193,17 +202,21 @@ ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+ggsave("../Plots/cr_distribution_plot.png", plot = cr_distribution_plot, width = 8, height = 5, dpi = 300)
+cr_distribution_plot
 
 ```
 
 
 ```{r fig.width = 10, fig.height = 8}
-ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
+cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
+ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
+cor_plot
 
 ```
 
 ```{r fig.width = 10, fig.height = 8}
-ggplot(marathon_data, aes(x = Age, y = CR, color = Sex)) +
+age_effect_plot <- ggplot(marathon_data, aes(x = Age, y = CR, color = Sex)) +
   geom_point(alpha = 0.1) +
   geom_smooth(method = "loess", se = TRUE) +
   facet_wrap(~ Race, scales = "free_y") +
@@ -216,6 +229,9 @@ ggplot(marathon_data, aes(x = Age, y = CR, color = Sex)) +
     axis.text.x = element_text(angle = 90, hjust = 1),
     legend.position = "top"
   )
+ggsave("../Plots/age_effect_plot.png", plot = age_effect_plot, width = 10, height = 8, dpi = 300)
+age_effect_plot
+
 ```
 
 ```{r fig.width = 10, fig.height = 8}
@@ -226,7 +242,7 @@ flag_colors <- c("Green" = "darkgreen",
                  "White" = "darkgrey")
 
 
-marathon_data %>%
+wgbt_effect <- marathon_data %>%
   ggplot(aes(x = Age, y = CR_PERCENTAGE, color = Flag)) +
   facet_wrap(~ Sex, scales = "fixed") +
   geom_point(alpha = 0.1) +
@@ -244,6 +260,8 @@ marathon_data %>%
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
+ggsave("../Plots/wgbt_effect.png", plot = wgbt_effect, width = 10, height = 8, dpi = 300)
+wgbt_effect
 
 ```
 
@@ -345,9 +363,11 @@ SR_age <- marathon_data %>%
         axis.text.x = element_text(angle = 90)
       )
 
-(RH_sex | RH_age) / (Wind_sex | Wind_age) / (SR_sex | SR_age) +
+weather_effect <- (RH_sex | RH_age) / (Wind_sex | Wind_age) / (SR_sex | SR_age) +
   plot_layout(guides = "collect", axis_titles = "collect") &
   theme(legend.position = 'bottom')
+ggsave("../Plots/weather_effect.png", plot = weather_effect, width = 20, height = 30, dpi = 300)
+weather_effect
 
 ```
 
