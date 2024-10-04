@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Insights into Marathon Performance: Impact of Different Weather Conditions on Runners"
 author: "William Qian"
 date: "October 2024"
 output: pdf_document
@@ -7,6 +7,8 @@ output: pdf_document
 
 ```{r setup, include=FALSE, message = FALSE, echo = FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
 library(mice, warn.conflicts = FALSE)
 library(naniar)
 library(ggplot2)
@@ -22,13 +24,13 @@ library(knitr)
 library(kableExtra)
 library(lubridate)
 library(patchwork)
+library(introdataviz)
 
 ```
 
 ```{r load_data}
 # Load data
 marathon_data <- read.csv("../Data/project1.csv")
-aqi_values <- read.csv("../Data/aqi_values.csv")
 course_record <- read.csv("../Data/course_record.csv")
 marathon_dates <- read.csv("../Data/marathon_dates.csv")
 
@@ -120,7 +122,7 @@ marathon_data <- marathon_data %>%
 
 ```
 
-First, we will check for missing values and patterns in the data. We can easily find that there are some weather data missing in the dataset. 
+First, we will check for missing values and patterns in the data. We can easily find that there are some weather data missing in the dataset.
 
 ```{r missing_pattern, fig.width = 15}
 # Check for missing values and patterns
@@ -167,7 +169,6 @@ marathon_data <- marathon_data %>%
   mutate(Age_group = if_else(Age_group == "80-89", "80-99", Age_group))
 ```
 
-
 ```{r fig.width = 10, fig.height = 8}
 ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
   geom_bar(position = "dodge", alpha = 0.7) +
@@ -183,20 +184,21 @@ ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
   )
 ```
 
+```{r fig.width = 8, fig.height = 5}
+ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
+  geom_split_violin() +
+  labs(title = "Distribution of Completion Time Percentage",
+       y = "CR Percentage") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
 
 ```{r fig.width = 10, fig.height = 8}
-ggplot(marathon_data, aes(x = as.factor(Year), y = CR, fill = Sex)) +
-  geom_boxplot() +
-  facet_wrap(~ Race, scales = "free_y", nrow = 2) +
-  labs(title = "Completetion Time Comparison by Sex",
-       x = "Year", 
-       y = "CR",
-       fill = "Sex") +
-  theme_minimal() + 
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    legend.position = "top"
-  )
+ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
 
 ```
 
@@ -216,75 +218,37 @@ ggplot(marathon_data, aes(x = Age, y = CR, color = Sex)) +
   )
 ```
 
-```{r}
-weather_total_effects <- function(weather_var) {
-  race_list <- c("Boston", "Chicago", "NYC", "Twin Cities", "Grandma")
-  
-  plot_list <- list()
-  
-  for (race in race_list) {
-    plot <- marathon_data %>%
-      filter(Race == race) %>%
-      ggplot(aes(x = as.factor(round(!!sym(weather_var), 2)), y = CR)) +
-      geom_boxplot(alpha = 0.7) +
-      geom_smooth(aes(group = 1), method = "lm", color = "blue", se = FALSE) +
-      labs(title = race) +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90))
-    
-    plot_list[[race]] <- plot
-  }
-  
-  combined_plot <- (plot_list$Boston | plot_list$Chicago) /
-                   (plot_list$NYC | plot_list$`Twin Cities` | plot_list$Grandma) +
-    plot_annotation(
-      title = paste("Effect of", weather_var, "on Marathon Performance"),
-      theme = theme(plot.title = element_text(hjust = 0.5))
-    ) &
-    labs(x = weather_var, y = "Completion Time")
-  
-  return(combined_plot)
-}
+```{r fig.width = 10, fig.height = 8}
+# WGBT effects
+flag_colors <- c("Green" = "darkgreen", 
+                 "Yellow" = "orange", 
+                 "Red" = "darkred", 
+                 "White" = "darkgrey")
 
-weather_sex_effects <- function(weather_var) {
-  
-  race_list <- c("Boston", "Chicago", "NYC", "Twin Cities", "Grandma")
-  
-  plot_list <- list()
-  
-  for (race in race_list) {
-    plot <- marathon_data %>%
-      filter(Race == race) %>%
-      ggplot(aes(x = as.factor(round(!!sym(weather_var), 2)), y = CR, color = Sex)) +
-      geom_boxplot(alpha = 0.7) +
-      geom_smooth(aes(group = Sex), method = "lm", se = FALSE) +
-      labs(title = race,
-           x = weather_var,
-           y = "Completion Time") +
-      theme_minimal() +
-      theme(
-        axis.text.x = element_text(angle = 90)
-      )
-    
-    plot_list[[race]] <- plot
-  }
-  
-  combined_plot <- (plot_list$Boston | plot_list$Chicago) / 
-                   (plot_list$NYC | plot_list$`Twin Cities` | plot_list$Grandma) +
-    plot_layout(guides = "collect", axis_titles = "collect") &
-    theme(legend.position = 'bottom') &
-    plot_annotation(
-      title = paste("Effect of", weather_var, "on Marathon Performance by Sex"),
-      theme = theme(plot.title = element_text(hjust = 0.5))
-    ) &
-    labs(x = weather_var, y = "Completion Time")
-  
-  return(combined_plot)
-}
 
-weather_age_effects <- function(weather_var) {
-  
-  age_group_colors <- c("0-9" = "#1b9e77", 
+marathon_data %>%
+  ggplot(aes(x = Age, y = CR_PERCENTAGE, color = Flag)) +
+  facet_wrap(~ Sex, scales = "fixed") +
+  geom_point(alpha = 0.1) +
+  geom_smooth(aes(group = Flag, color = Flag), se = T, size=0.5) +
+  geom_hline(yintercept = 50, linetype = "dashed", color = "blue") +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "blue") +
+  geom_hline(yintercept = 150, linetype = "dashed", color = "blue") +
+  geom_hline(yintercept = 200, linetype = "dashed", color = "blue") +
+  scale_color_manual(values = flag_colors) +
+  labs(title = "WGBT Effect on Completion Time by Age and Sex",
+       x = "Age",
+       y = "Percenatge of Completion Time",
+       color = "Flag") + 
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+```{r fig.width = 20, fig.height = 30}
+age_group_colors <- c("0-9" = "#1b9e77", 
                       "10-19" = "#d95f02", 
                       "20-29" = "#7570b3", 
                       "30-39" = "#e7298a", 
@@ -293,83 +257,139 @@ weather_age_effects <- function(weather_var) {
                       "60-69" = "#a6761d", 
                       "70-79" = "#666666", 
                       "80-99" = "#1f78b4")
-  
-  race_list <- c("Boston", "Chicago", "NYC", "Twin Cities", "Grandma")
-  
-  plot_list <- list()
-  
-  for (race in race_list) {
-    plot <- marathon_data %>%
-      filter(Race == race) %>%
-      ggplot(aes(x = as.factor(round(!!sym(weather_var), 2)), y = CR, fill = Age_group, color = Age_group)) +
+
+# RH Effects
+RH_sex <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(RH, 2)), y = CR_PERCENTAGE, color = Sex)) +
+      geom_boxplot(alpha = 0.7) +
+      geom_smooth(aes(group = Sex), se = FALSE) +
+      labs(title = "RH Effect on Marathon Performance by Sex",
+           x = "RH",
+           y = "Completion Time") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 90)
+      )
+
+RH_age <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(RH, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
       geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
       geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
       scale_fill_manual(values = age_group_colors) +
       scale_color_manual(values = age_group_colors) +
-      labs(title = race,
-           x = weather_var,
-           y = "Completion Time (CR)",
+      labs(title = "RH Effect on Marathon Performance by Age",
+           x = "RH",
+           y = "Percentage of Completion Time",
            fill = "Age Group",
            color = "Age Group") + 
       theme_minimal() +
       theme(
         axis.text.x = element_text(angle = 90)
       )
-    
-    plot_list[[race]] <- plot
-  }
-  
-  combined_plot <- (plot_list$Boston | plot_list$Chicago) / 
-                   (plot_list$NYC | plot_list$`Twin Cities` | plot_list$Grandma) +
-    plot_layout(guides = "collect", axis_titles = "collect") &
-    theme(legend.position = 'bottom') &
-    plot_annotation(
-      title = paste("Effect of", weather_var, "on Marathon Performance by Age"),
-      theme = theme(plot.title = element_text(hjust = 0.5))
-    ) &
-    labs(x = weather_var, y = "Completion Time")
-  
-  return(combined_plot)
-}
+
+# Wind Effects
+Wind_sex <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(Wind, 2)), y = CR_PERCENTAGE, color = Sex)) +
+      geom_boxplot(alpha = 0.7) +
+      geom_smooth(aes(group = Sex), se = FALSE) +
+      labs(title = "Wind Effect on Marathon Performance by Sex",
+           x = "Wind",
+           y = "Completion Time") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 90)
+      )
+
+Wind_age <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(Wind, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
+      geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
+      geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
+      scale_fill_manual(values = age_group_colors) +
+      scale_color_manual(values = age_group_colors) +
+      labs(title = "Wind Effect on Marathon Performance by Age",
+           x = "Wind",
+           y = "Percentage of Completion Time",
+           fill = "Age Group",
+           color = "Age Group") + 
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 90)
+      )
+
+# SR Effects
+SR_sex <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(SR, 2)), y = CR_PERCENTAGE, color = Sex)) +
+      geom_boxplot(alpha = 0.7) +
+      geom_smooth(aes(group = Sex), se = FALSE) +
+      labs(title = "SR Effect on Marathon Performance by Sex",
+           x = "SR",
+           y = "Completion Time") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 90)
+      )
+
+SR_age <- marathon_data %>%
+      ggplot(aes(x = as.factor(round(SR, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
+      geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
+      geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
+      scale_fill_manual(values = age_group_colors) +
+      scale_color_manual(values = age_group_colors) +
+      labs(title = "SR Effect on Marathon Performance by Age",
+           x = "SR",
+           y = "Percentage of Completion Time",
+           fill = "Age Group",
+           color = "Age Group") + 
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 90)
+      )
+
+(RH_sex | RH_age) / (Wind_sex | Wind_age) / (SR_sex | SR_age) +
+  plot_layout(guides = "collect", axis_titles = "collect") &
+  theme(legend.position = 'bottom')
 
 ```
 
-```{r fig.width = 10, fig.height = 8}
-weather_total_effects("RH")
-weather_sex_effects("RH")
-weather_age_effects("RH")
+
+```{r}
+# RH model
+RH_model <- glm(CR_PERCENTAGE ~ RH + Sex + Age, data = marathon_data)
+kable(summary(RH_model)$coefficients, caption = "RH Model Coefficients")
+
+# SR model
+SR_model <- glm(CR_PERCENTAGE ~ SR + Sex + Age, data = marathon_data)
+kable(summary(SR_model)$coefficients, caption = "SR Model Coefficients")
+
+# DP model
+DP_model <- glm(CR_PERCENTAGE ~ DP + Sex + Age, data = marathon_data)
+kable(summary(DP_model)$coefficients, caption = "DP Model Coefficients")
+
+# Wind model
+Wind_model <- glm(CR_PERCENTAGE ~ Wind + Sex + Age, data = marathon_data)
+kable(summary(Wind_model)$coefficients, caption = "Wind Model Coefficients")
+
+# Flag model
+Flag_model <- glm(CR_PERCENTAGE ~ Flag + Sex + Age, data = marathon_data)
+kable(summary(Flag_model)$coefficients, caption = "Flag Model Coefficients")
+
+# WBGT model
+WBGT_model <- glm(CR_PERCENTAGE ~ WBGT + Sex + Age, data = marathon_data)
+kable(summary(WBGT_model)$coefficients, caption = "WBGT Model Coefficients")
 
 ```
 
-```{r fig.width = 10, fig.height = 8}
-weather_total_effects("SR")
-weather_sex_effects("SR")
-weather_age_effects("SR")
+```{r}
+# linear model
+lm_model_1 <- glm(CR_PERCENTAGE ~ RH + SR + DP + Wind + WBGT + Sex + Age, data = marathon_data)
+kable(summary(lm_model_1)$coefficients, caption = "Model with WBGT Coefficients")
+
+lm_mode_2 <- glm(CR_PERCENTAGE ~ RH + SR + DP + Wind + Flag + Sex + Age, data = marathon_data)
+kable(summary(lm_mode_2)$coefficients, caption = "Model with Flag Coefficients")
 
 ```
 
-```{r fig.width = 10, fig.height = 8}
-weather_total_effects("DP")
-weather_sex_effects("DP")
-weather_age_effects("DP")
-
-```
-
-```{r fig.width = 10, fig.height = 8}
-weather_total_effects("Wind")
-weather_sex_effects("Wind")
-weather_age_effects("Wind")
-
-```
-
-```{r fig.width = 10, fig.height = 8}
-weather_total_effects("WBGT")
-weather_sex_effects("WBGT")
-weather_age_effects("WBGT")
-
-```
-
-# Code Appendix 
+# Code Appendix
 
 ```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
 
