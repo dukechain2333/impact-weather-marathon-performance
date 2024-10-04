@@ -273,8 +273,8 @@ RH_sex <- marathon_data %>%
 
 RH_age <- marathon_data %>%
       ggplot(aes(x = as.factor(round(RH, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
-      geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
-      geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
+      geom_point(alpha = 0.2) +
+      geom_smooth(aes(group = Age_group, color = Age_group), se = T) + 
       scale_fill_manual(values = age_group_colors) +
       scale_color_manual(values = age_group_colors) +
       labs(title = "RH Effect on Marathon Performance by Age",
@@ -302,8 +302,8 @@ Wind_sex <- marathon_data %>%
 
 Wind_age <- marathon_data %>%
       ggplot(aes(x = as.factor(round(Wind, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
-      geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
-      geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
+      geom_point(alpha = 0.2) + 
+      geom_smooth(aes(group = Age_group, color = Age_group), se = T) + 
       scale_fill_manual(values = age_group_colors) +
       scale_color_manual(values = age_group_colors) +
       labs(title = "Wind Effect on Marathon Performance by Age",
@@ -331,8 +331,8 @@ SR_sex <- marathon_data %>%
 
 SR_age <- marathon_data %>%
       ggplot(aes(x = as.factor(round(SR, 2)), y = CR_PERCENTAGE, fill = Age_group, color = Age_group)) +
-      geom_boxplot(alpha = 0.6, position = position_dodge(width = 1)) + 
-      geom_smooth(aes(group = Age_group, color = Age_group), method = "lm", se = FALSE) + 
+      geom_point(alpha = 0.2) + 
+      geom_smooth(aes(group = Age_group, color = Age_group), se = T) + 
       scale_fill_manual(values = age_group_colors) +
       scale_color_manual(values = age_group_colors) +
       labs(title = "SR Effect on Marathon Performance by Age",
