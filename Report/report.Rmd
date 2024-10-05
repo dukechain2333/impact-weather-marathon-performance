@@ -1,5 +1,5 @@
 ---
-title: "Insights into Marathon Performance: Impact of Different Weather Conditions on Runners"
+title: "Marathon Performance Analysis: Impact of Different Weather Conditions on Runners"
 author: "William Qian"
 date: "October 2024"
 output: pdf_document
@@ -32,15 +32,71 @@ library(introdataviz)
 # Load data
 marathon_data <- read.csv("../Data/project1.csv")
 course_record <- read.csv("../Data/course_record.csv")
-marathon_dates <- read.csv("../Data/marathon_dates.csv")
 
 ```
 
-# Abstract
-
 # Introduction
 
+Marathon running is a popular sport that attracts millions of participants worldwide. The completion time of a marathon is influenced by various factors, including weather conditions. In this report, we analyze the impact of different weather conditions on marathon performance across the lifespan in both men and women using data from five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. 
+
+# Data Description
+
+Two datasets are used in this analysis: Marathon Data and Course Record Data. Those two datasets were combined to form a comprehensive dataset for analysis. 
+
+### Marathon Data
+
+The Marathon Data contains information about the average completion record percentage grouped by age and sex of runners in five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. The dataset includes the following columns:
+
+| Parameter       | Coding details                                                                            |
+|-----------------|-------------------------------------------------------------------------------------------|
+| **Race**        | 0 = Boston Marathon , 1 = Chicago Marathon , 2 = New York City Marathon , 3 = Twin Cities Marathon (Minneapolis, MN) , 4 = Grandma’s Marathon (Duluth, MN) |
+| **Year**        | Year of the marathon                                                                      |
+| **Sex/Gender**  | 0 = Identified as Female , 1 = Identified as Male                                       |
+| **Flag**        | White = WBGT <10°C , Green = WBGT 10-18°C , Yellow = WBGT 18-23°C , Red = WBGT 23-28°C , Black = WBGT >28°C |
+| **% CR**        | Percent off current course record for gender                                               |
+| **Td, °C**      | Dry bulb temperature in Celsius                                                            |
+| **Tw, °C**      | Wet bulb temperature in Celsius                                                            |
+| **%rh**         | Percent relative humidity                                                                  |
+| **Tg, °C**      | Black globe temperature in Celsius                                                         |
+| **SR W/m²**     | Solar radiation in Watts per meter squared                                                 |
+| **DP**          | Dew Point in Celsius                                                                       |
+| **Wind**        | Wind speed in Km/hr                                                                        |
+| **WBGT**        | Wet Bulb Globe Temperature                                                                 |
+
+Note that the variable `WBGT` is actually a composite index that combines the effects of `Td`, `Tw`, and `Tg`, which means we can ignore the three variables when analyzing the data.
+
+$$
+WBGT = 0.7 \times Tw + 0.2 \times Tg + 0.1 \times Td
+$$
+
+This data contains of 11073 observations and 12 variables. The data documented the 5 major races form year 1993 to 2016, and each observation represents the average performance of a specific age in a particular race during a specific year. It should be noted that in this dataset, only one set of weather data is recorded for each race.
+
+### Course Record Data
+
+This dataset contains the course record for each race grouped by sex documented in the Marathon Data. The dataset includes the following columns:
+
+| Parameter       | Coding details                                                                            |
+|-----------------|-------------------------------------------------------------------------------------------|
+| **Race**        | B = Boston Marathon , C = Chicago Marathon , NY = New York City Marathon , TC = Twin Cities Marathon (Minneapolis, MN) , D = Grandma’s Marathon (Duluth, MN) |
+| **Sex/Gender**  | 0 = Identified as Female , 1 = Identified as Male                                       |
+| **Year**        | Year of the marathon                                                                      |
+| **CR**          | Current course record for gender                                               |
+
+Different from the Marathon Data, the `CR` in this dataset is in hours, which means we can calculate the completion time of each runner by multiplying the CR percentage in the Marathon Data with the CR in this dataset.
+
 # Data Preprocessing
+
+## Data Manipulation
+
+For clarity, we firstly rename the `Race` column in the Marathon Data as well as the Course Record Data to the full name of the marathon. And since we are using two datasets, we need to merge them based on the `Race`, `Year`, and `Sex` columns. After merging, we now have a united dataset that contains 15 variables and 11073 observations in total.
+
+And then, condiering of the nature of the variables and the analysis we are going to perform, we convert the `Year`, `Race`, `Sex`, and `Flag` columns to factors. We also created a new column `Age_group` by grouping the `Age` column into 10-year intervals. This step is essential trying to factorize the `Age` column.
+
+Most importantly, we would like to convert the `CR` in the Course Record Data to seconds. The process is simple, we first convert the `CR` to a period object and then convert it to seconds. After that, we can calculate the completion time of each runner by multiplying the CR percentage in the Marathon Data with the CR in this dataset. The calculation formula is as follows:
+
+$$
+CR_{adjusted} = (1 + CR_{PERCENTAGE} \times 0.01) \times CR
+$$
 
 ```{r data_intro}
 # rename the column names that are too long to follow.
@@ -62,22 +118,6 @@ marathon_data$Flag <- as.factor(marathon_data$Flag)
 
 marathon_data$Flag[marathon_data$Flag == ""] <- NA
 
-# Check the dimension of the data
-dim(marathon_data)
-
-# replace marathon name with code name in marathon_dates
-marathon_dates$marathon[marathon_dates$marathon == "Boston"] <- 0
-marathon_dates$marathon[marathon_dates$marathon == "Chicago"] <- 1
-marathon_dates$marathon[marathon_dates$marathon == "NYC"] <- 2
-marathon_dates$marathon[marathon_dates$marathon == "Twin Cities"] <- 3
-marathon_dates$marathon[marathon_dates$marathon == "Grandmas"] <- 4
-marathon_dates$marathon <- as.factor(marathon_dates$marathon)
-colnames(marathon_dates)[1] <- "Race"
-
-# rename date and year columns in marathon_dates
-colnames(marathon_dates)[2] <- "Date"
-colnames(marathon_dates)[3] <- "Year"
-
 # replace marathon name with code name in course_record
 course_record$Race[course_record$Race == "B"] <- 0
 course_record$Race[course_record$Race == "C"] <- 1
@@ -97,9 +137,6 @@ course_record$CR <- period_to_seconds(hms(course_record$CR))
 
 # Join course_record and marathon_data
 marathon_data <- merge(marathon_data, course_record, by = c("Race", "Year", "Sex"))
-
-# Join marathon_data and marathon_dates
-marathon_data <- merge(marathon_data, marathon_dates, by = c("Race", "Year"))
 
 # calculate the record of each runner
 marathon_data$CR <- (1 + marathon_data$CR_PERCENTAGE * 0.01) * marathon_data$CR
@@ -122,7 +159,9 @@ marathon_data <- marathon_data %>%
 
 ```
 
-First, we will check for missing values and patterns in the data. We can easily find that there are some weather data missing in the dataset.
+## Data Quality Check
+
+Before we start the analysis, we need to check the data quality. We first check for missing values and patterns in the dataset. The missing values are visualized using the `vis_miss` function from the `naniar` package. The plot shows that there are missing values in the weather related columns, and this missingness seems to have a very clear pattern. Based on this pattern, we can assume boldly that the missing values are not missing at random, but are related to specific races.
 
 ```{r missing_pattern, fig.width = 15}
 # Check for missing values and patterns
@@ -132,7 +171,9 @@ miss_plot
 
 ```
 
-```{r}
+In order to veryify our assumption, we calculate the missing percentage of weather data in each marathon by year. The table below shows that the missing percentage of most of the races are 0, however, for races held in 2011 (Chicago, NYC, and Twin Cities) as well as the one held in 2012 (Grandmas), the missing percentage is 100%. This confirms our assumption that the missing values are related to specific races. It would be a wise choice to remove all of those races from our dataset. To be noted that the NA value in the table means there are no races held in that year.
+
+```{r missing_percentage}
 # Check the missing percentage of weather data in each marathon by year
 marathon_data %>%
   group_by(Race, Year) %>%
@@ -144,15 +185,37 @@ marathon_data %>%
 
 ```
 
-```{r}
+```{r remove_missing}
 # remove missing data
 marathon_data <- marathon_data %>% filter(!is.na(Flag))
 
 ```
 
-# Data Analysis
+And we also want to check the performance distribution of each race by year, since although the weather condition may vary from year to year, the performance of runners may not change significantly within the same track. As we can see in the plot below, despite some disturbances, the performance of runners tend to stay stable over the years. The difference in performance might be due to the different weather conditions in different years. Overall, the stability of the performance indicates that the dataset is reliable for analysis.
 
-```{r fig.width = 10, fig.height = 8}
+```{r completion_time_race, fig.width = 8, fig.height = 5}
+completion_time_race <- ggplot(marathon_data, aes(x = Year, y = CR)) +
+  geom_boxplot(aes(fill = Race), alpha = 0.5) +
+  stat_summary(fun = "mean", geom = "point", shape = 23, size = 1, fill = "red") +
+  stat_summary(fun = "mean", geom = "line", aes(group = 1), color = "red") +
+  facet_wrap(~ Race) +
+  labs(title = "CR Distribution by Year and Race",
+       x = "Year",
+       y = "Completion Time (CR)") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.text.x = element_text(angle = 90, hjust = 1),
+    legend.position = "none"
+  )
+ggsave("../Plots/completion_time_race.png", plot = completion_time_race, width = 10, height = 8, dpi = 300)
+completion_time_race
+
+```
+
+Another factor might affect the result of the analysis is `age`. In a balanced dataset, we would expect the number of participants in each age group to be roughly the same. To check this, we plot the number of participants in each age group for each races. The plot shows a pattern that for each race, participants between age 20 to 79 are the most common and also balanced, while the number of participants in the 10-19, 80-89 and 90-99 age groups are relatively small. This suggests that the inference results obtained from the 10-19, 80-89 and 90-99 age groups may not be as reliable as those obtained from the 20-79 age groups. Moreover, the number of participants in the 90-99 age group is extremely small, so we decide to merge it with the 80-89 age group to become the 80-99 age group.
+
+```{r participants_age_plot, fig.width = 10, fig.height = 8}
 participants_age_plot <- ggplot(marathon_data, aes(x = Age_group, fill = Age_group)) +
   geom_bar() +
   facet_wrap(~ Race) +
@@ -169,13 +232,15 @@ participants_age_plot
 
 ```
 
-```{r}
+```{r merge_age_group}
 marathon_data <- marathon_data %>%
   mutate(Age_group = if_else(Age_group == "90-99", "80-99", Age_group)) %>%
   mutate(Age_group = if_else(Age_group == "80-89", "80-99", Age_group))
 ```
 
-```{r fig.width = 10, fig.height = 8}
+Similarly, we would hope that participants' gender is balanced in the dataset. From the plot below, we can tell the Female:Male portion is roughly equal to 1 in all of the races, which is a good feature for our analysis.
+
+```{r sex_distribution_race, fig.width = 10, fig.height = 8}
 sex_distribution_race <- ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
   geom_bar(position = "dodge", alpha = 0.7) +
   facet_wrap(~ Race, scales = "free_y") +
@@ -193,7 +258,9 @@ sex_distribution_race
 
 ```
 
-```{r fig.width = 8, fig.height = 5}
+# Data Analysis
+
+```{r cr_distribution_plot, fig.width = 8, fig.height = 5}
 cr_distribution_plot <- ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
   geom_split_violin() +
   labs(title = "Distribution of Completion Time Percentage",
@@ -207,8 +274,7 @@ cr_distribution_plot
 
 ```
 
-
-```{r fig.width = 10, fig.height = 8}
+```{r cor_plot, fig.width = 10, fig.height = 8}
 cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
 ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
 cor_plot
