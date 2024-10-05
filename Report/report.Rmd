@@ -204,7 +204,6 @@ completion_time_race <- ggplot(marathon_data, aes(x = Year, y = CR)) +
        y = "Completion Time (CR)") +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5),
     axis.text.x = element_text(angle = 90, hjust = 1),
     legend.position = "none"
   )
@@ -274,7 +273,7 @@ sex_distribution_race
 We also want to check the correlation between the weather variables. The correlation plot below shows that `DP` is highly correlated with `WBGT`, which means we can ignore the `DP` variable when analyzing the data. And since the `WBGT` is a composite index that combines the effects of `Td`, `Tw`, and `Tg`, all of those variables are highly correlated with `WBGT`, meaning that they can be ignored as well.
 
 ```{r cor_plot, fig.width = 8, fig.height = 5}
-cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
+cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT)) + ggtitle("Correlation Plot of Weather Variables")
 ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
 cor_plot
 
