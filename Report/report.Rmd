@@ -213,9 +213,24 @@ completion_time_race
 
 ```
 
-Another factor might affect the result of the analysis is `age`. In a balanced dataset, we would expect the number of participants in each age group to be roughly the same. To check this, we plot the number of participants in each age group for each races. The plot shows a pattern that for each race, participants between age 20 to 79 are the most common and also balanced, while the number of participants in the 10-19, 80-89 and 90-99 age groups are relatively small. This suggests that the inference results obtained from the 10-19, 80-89 and 90-99 age groups may not be as reliable as those obtained from the 20-79 age groups. Moreover, the number of participants in the 90-99 age group is extremely small, so we decide to merge it with the 80-89 age group to become the 80-99 age group.
+Another factor might affect the result of the analysis is `age`. In a balanced dataset, we would expect the number of participants in each age group to be roughly the same. To check this, we count the number of participants in each age group for each races. The table shows a pattern that for each race, participants between age 20 to 79 are the most common and also balanced, while the number of participants in the 10-19, 80-89 and 90-99 age groups are relatively small. This suggests that the inference results obtained from the 10-19, 80-89 and 90-99 age groups may not be as reliable as those obtained from the 20-79 age groups. Moreover, the number of participants in the 90-99 age group is extremely small, so we decide to merge it with the 80-89 age group to become the 80-99 age group.
 
-```{r participants_age_plot, fig.width = 10, fig.height = 8}
+Similarly, we would hope that participants' gender is balanced in the dataset. From the table below, we can tell the Female:Male portion is roughly equal to 1 in all of the races, which is a good feature for our analysis.
+
+```{r age_sex_distribution}
+tbl_summary(
+  marathon_data %>% select(Race, Age_group, Sex),
+  by = Race,
+    statistic = list(
+    Age_group ~ "{n} ({p}%)",
+    Sex ~ "{n} ({p}%)"
+  )
+) %>%
+  modify_header(label = "**Age Group**") %>%
+  modify_caption("**Number of Participants by Age Group, Sex and Race**") 
+```
+
+```{r participants_age_plot, include=FALSE}
 participants_age_plot <- ggplot(marathon_data, aes(x = Age_group, fill = Age_group)) +
   geom_bar() +
   facet_wrap(~ Race) +
@@ -238,9 +253,7 @@ marathon_data <- marathon_data %>%
   mutate(Age_group = if_else(Age_group == "80-89", "80-99", Age_group))
 ```
 
-Similarly, we would hope that participants' gender is balanced in the dataset. From the plot below, we can tell the Female:Male portion is roughly equal to 1 in all of the races, which is a good feature for our analysis.
-
-```{r sex_distribution_race, fig.width = 10, fig.height = 8}
+```{r sex_distribution_race, include=FALSE}
 sex_distribution_race <- ggplot(marathon_data, aes(x = Sex, fill = Sex)) +
   geom_bar(position = "dodge", alpha = 0.7) +
   facet_wrap(~ Race, scales = "free_y") +
@@ -258,6 +271,15 @@ sex_distribution_race
 
 ```
 
+We also want to check the correlation between the weather variables. The correlation plot below shows that `DP` is highly correlated with `WBGT`, which means we can ignore the `DP` variable when analyzing the data. And since the `WBGT` is a composite index that combines the effects of `Td`, `Tw`, and `Tg`, all of those variables are highly correlated with `WBGT`, meaning that they can be ignored as well.
+
+```{r cor_plot, fig.width = 8, fig.height = 5}
+cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
+ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
+cor_plot
+
+```
+
 # Data Analysis
 
 ```{r cr_distribution_plot, fig.width = 8, fig.height = 5}
@@ -271,13 +293,6 @@ cr_distribution_plot <- ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fil
   )
 ggsave("../Plots/cr_distribution_plot.png", plot = cr_distribution_plot, width = 8, height = 5, dpi = 300)
 cr_distribution_plot
-
-```
-
-```{r cor_plot, fig.width = 10, fig.height = 8}
-cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT))
-ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
-cor_plot
 
 ```
 
