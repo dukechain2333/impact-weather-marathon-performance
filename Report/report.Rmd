@@ -491,7 +491,7 @@ rh_effect <- (RH_sex | RH_age) +
       plot.title = element_text(size = 15, face = "bold")
       )
     )
-ggsave("../Plots/rh_effect.png", plot = rh_effect, width = 20, height = 30, dpi = 300)
+ggsave("../Plots/rh_effect.png", plot = rh_effect, width = 15, height = 8, dpi = 300)
 rh_effect
 
 ```
@@ -508,7 +508,7 @@ wind_effect <- (Wind_sex | Wind_age) +
       plot.title = element_text(size = 15, face = "bold")
       )
     )
-ggsave("../Plots/wind_effect.png", plot = wind_effect, width = 20, height = 30, dpi = 300)
+ggsave("../Plots/wind_effect.png", plot = wind_effect, width = 15, height = 8, dpi = 300)
 wind_effect
 
 ```
@@ -523,7 +523,7 @@ sr_effect <- (SR_sex | SR_age) +
       plot.title = element_text(size = 15, face = "bold")
       )
     )
-ggsave("../Plots/sr_effect.png", plot = sr_effect, width = 20, height = 30, dpi = 300)
+ggsave("../Plots/sr_effect.png", plot = sr_effect, width = 15, height = 8, dpi = 300)
 sr_effect
 
 ```
