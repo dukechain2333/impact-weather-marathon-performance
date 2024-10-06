@@ -1,5 +1,7 @@
 # Marathon Performance Analysis: Impact of Different Weather Conditions on Runners
 
+[View report here](Report/report.pdf)
+
 ## Abstract
 
 **Purpose:** The purpose of this report is to analyze the impact of various weather conditions on marathon performance, focusing on how age, gender, and environmental factors influence race completion times. The study examines data from five major marathons to identify which factors have the most significant effects on marathon performance and whether these effects differ across age and gender.
