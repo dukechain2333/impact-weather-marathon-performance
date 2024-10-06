@@ -35,11 +35,9 @@ course_record <- read.csv("../Data/course_record.csv")
 
 ```
 
-# Abstract
-
 # Introduction
 
-Marathon running is a popular sport that attracts millions of participants worldwide. The completion time of a marathon is influenced by various factors, including weather conditions. In this report, we analyze the impact of different weather conditions on marathon performance across the lifespan in both men and women using data from five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. 
+Marathon running is a popular sport that attracts millions of participants worldwide. The completion time of a marathon is influenced by various factors, including weather conditions. In this report, we analyze the impact of different weather conditions on marathon performance across the lifespan in both men and women using data from five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. We aim at examine effects of increasing age on marathon performance in men and women and the impact of environmental conditions on marathon performance, and whether the impact differs across age and gender, additionly, we want to find out which factor has the most significant impact on marathon performance.
 
 # Data Description
 
@@ -165,11 +163,11 @@ marathon_data$Flag <- factor(marathon_data$Flag, levels = c("White", "Green", "Y
 
 ## Data Quality Check
 
-Before we start the analysis, we need to check the data quality. We first check for missing values and patterns in the dataset. The missing values are visualized using the `vis_miss` function from the `naniar` package. The plot shows that there are missing values in the weather related columns, and this missingness seems to have a very clear pattern. Based on this pattern, we can assume boldly that the missing values are not missing at random, but are related to specific races.
+Before we start the analysis, we need to check the data quality. We first check for missing values and patterns in the dataset. The missing values are visualized using the `vis_miss` function from the `naniar` package. Figure 1 shows that there are missing values in the weather related columns, and this missingness seems to have a very clear pattern. Based on this pattern, we can assume boldly that the missing values are not missing at random, but are related to specific races.
 
 ```{r missing_pattern, fig.width = 15}
 # Check for missing values and patterns
-miss_plot <- vis_miss(marathon_data)
+miss_plot <- vis_miss(marathon_data) + labs(title = "Figure 1: Missing Data Pattern")
 ggsave("../Plots/missing_values_plot.png", plot = miss_plot, width = 15, dpi = 300)
 miss_plot
 
@@ -195,7 +193,7 @@ marathon_data <- marathon_data %>% filter(!is.na(Flag))
 
 ```
 
-And we also want to check the performance distribution of each race by year, since although the weather condition may vary from year to year, the performance of runners may not change significantly within the same track. As we can see in the plot below, despite some disturbances, the performance of runners tend to stay stable over the years. The difference in performance might be due to the different weather conditions in different years. Overall, the stability of the performance indicates that the dataset is reliable for analysis.
+And we also want to check the performance distribution of each race by year, since although the weather condition may vary from year to year, the performance of runners may not change significantly within the same track. As we can see in Figure 2, despite some disturbances, the performance of runners tend to stay stable over the years. The difference in performance might be due to the different weather conditions in different years. Overall, the stability of the performance indicates that the dataset is reliable for analysis.
 
 ```{r completion_time_race, fig.width = 8, fig.height = 5}
 completion_time_race <- ggplot(marathon_data, aes(x = Year, y = CR)) +
@@ -203,7 +201,7 @@ completion_time_race <- ggplot(marathon_data, aes(x = Year, y = CR)) +
   stat_summary(fun = "mean", geom = "point", shape = 23, size = 1, fill = "red") +
   stat_summary(fun = "mean", geom = "line", aes(group = 1), color = "red") +
   facet_wrap(~ Race) +
-  labs(title = "CR Distribution by Year and Race",
+  labs(title = "Figure 2: CR Distribution by Year and Race",
        x = "Year",
        y = "Completion Time (CR)") +
   theme_minimal() +
@@ -274,10 +272,10 @@ sex_distribution_race
 
 ```
 
-We also want to check the correlation between the weather variables. The correlation plot below shows that `DP` is highly correlated with `WBGT`, which means we can ignore the `DP` variable when analyzing the data. And since the `WBGT` is a composite index that combines the effects of `Td`, `Tw`, and `Tg`, all of those variables are highly correlated with `WBGT`, meaning that they can be ignored as well.
+We also want to check the correlation between the weather variables. Figure 3 shows that `DP` is highly correlated with `WBGT`, which means we can ignore the `DP` variable when analyzing the data. And since the `WBGT` is a composite index that combines the effects of `Td`, `Tw`, and `Tg`, all of those variables are highly correlated with `WBGT`, meaning that they can be ignored as well.
 
 ```{r cor_plot, fig.width = 8, fig.height = 5}
-cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT)) + ggtitle("Correlation Plot of Weather Variables")
+cor_plot <- ggpairs(marathon_data %>% select(TD, TW, RH, TG, SR, DP, Wind, WBGT)) + ggtitle("Figure 3: Correlation Plot of Weather Variables")
 ggsave("../Plots/cor_plot.png", plot = cor_plot, width = 10, height = 8, dpi = 300)
 cor_plot
 
@@ -287,12 +285,12 @@ cor_plot
 
 ## Inner Factors Analysis
 
-A very instinctive thought is that the completion time of a marathon is influenced by gender. To verify this, we first plot the distribution of completion time percentage among Female and Male, and find that in each races, males tend to have a lower completion time. And we can also observe a distribution pattern that the completion time for both male and female runners is heavily skewed, which means that most of the runners have a completion time close to the course record. This suggests that our runners are generally well-trained and have a good performance.
+A very instinctive thought is that the completion time of a marathon is influenced by gender. To verify this, we first plot the distribution of completion time percentage among Female and Male, and find that in each races, males tend to have a lower completion time. And we can also observe a distribution pattern in Figure 4 that the completion time for both male and female runners is heavily skewed, which means that most of the runners have a completion time close to the course record. This suggests that our runners are generally well-trained and have a good performance.
 
 ```{r cr_distribution_plot, fig.width = 6, fig.height = 3}
 cr_distribution_plot <- ggplot(marathon_data, aes(x=Race, y = CR_PERCENTAGE, fill=Sex)) +
   geom_split_violin() +
-  labs(title = "Distribution of Completion Time Percentage",
+  labs(title = "Figure 4: Distribution of Completion Time Percentage",
        y = "CR Percentage") +
   theme_minimal() +
   theme(
@@ -303,14 +301,14 @@ cr_distribution_plot
 
 ```
 
-Next, we want to explore the effect of age on marathon performance. From the plot below, we can not only observe the fact that female runners are tend to run slower than male runners, but we can also observe that in each cases, no matter male or female, the completion time decreases first and then increases with age. And people around their 30s tend to have the best performance. This suggests that the completion time of a marathon is influenced by age, and the effect of age on completion time is not linear.
+Next, we want to explore the effect of age on marathon performance. From Figure 5, we can not only observe the fact that female runners are tend to run slower than male runners, but we can also observe that in each cases, no matter male or female, the completion time decreases first and then increases with age. And people around their 30s tend to have the best performance. This suggests that the completion time of a marathon is influenced by age, and the effect of age on completion time is not linear.
 
 ```{r age_effect_plot, fig.width = 7, fig.height = 4}
 age_effect_plot <- ggplot(marathon_data, aes(x = Age, y = CR, color = Sex)) +
   geom_point(alpha = 0.1) +
   geom_smooth(method = "loess", se = TRUE) +
   facet_wrap(~ Race, scales = "free_y") +
-  labs(title = "Effect of Age on Marathon Performance by Race",
+  labs(title = "Figure 5: Effect of Age on Marathon Performance by Race",
        x = "Age (yrs)", 
        y = "Best Time (CR)",
        color = "Sex") +
@@ -330,9 +328,9 @@ Both of `Age` and `Sex` can be considered as inner factors that affect the compl
 
 We first want to focus on the effect of `WBGT` on marathon performance. `WBGT` is a composite index that combines the effects of `Td`, `Tw`, and `Tg`. Conceputally, the `WBGT` is an index used to estimate the effect of temperature, humidity, wind speed, and solar radiation on humans, typically to assess heat stress during physical activities in outdoor environments. That suggests the higher the `WBGT`, the more difficult for runners to finish the marathon. 
 
-In order to prove our assumption, we plot the effect of `WBGT` on completion time by sex. However, instead of using `WBGT` directly, we use the `Flag` column to represent the `WBGT` level. The `Flag` column is a categorical variable that represents the `WBGT` level, with White representing the lowest `WBGT` level and Black representing the highest `WBGT` level. In the following plot, each of the plot represents an observation, and the color of the plot represents the `Flag` level. To better read the result, we also add linear regression line to each plot. 
+In order to prove our assumption, we plot the effect of `WBGT` on completion time by sex. However, instead of using `WBGT` directly, we use the `Flag` column to represent the `WBGT` level. The `Flag` column is a categorical variable that represents the `WBGT` level, with White representing the lowest `WBGT` level and Black representing the highest `WBGT` level. In Figure 6, each of the plot represents an observation, and the color of the plot represents the `Flag` level. To better read the result, we also add linear regression line to each plot. 
 
-By interpreting the plot, we can tell that in general cases, the worse the `WBGT` level, the higher the completion time. In detail, we found that the `WBGT` level do have different effect for different age groups as well as gender. To be note that, the wider the space between two regression lines, the more significant the effect of `WBGT` level on completion time. In that case, we can tell the `WBGT` level has a more significant effect on male than female. And looking at the difference among age groups, we found that the `WBGT` has more effect on elder runners than younger runners. Additionaly, we see intersection between the regression lines around age 75, we think that might be due to the small number of participants in the 70-79 age group, causing the result to be less reliable, the larger standard error of the regression line showing in the plot also suggests this assumption.
+By interpreting Figure 6, we can tell that in general cases, the worse the `WBGT` level, the higher the completion time. In detail, we found that the `WBGT` level do have different effect for different age groups as well as gender. To be note that, the wider the space between two regression lines, the more significant the effect of `WBGT` level on completion time. In that case, we can tell the `WBGT` level has a more significant effect on male than female. And looking at the difference among age groups, we found that the `WBGT` has more effect on elder runners than younger runners. Additionaly, we see intersection between the regression lines around age 75, we think that might be due to the small number of participants in the 70-79 age group, causing the result to be less reliable, the larger standard error of the regression line showing in Figure 6 also suggests this assumption.
 
 ```{r wgbt_effect, fig.width = 8, fig.height = 4}
 # WGBT effects
@@ -352,7 +350,7 @@ wgbt_effect <- marathon_data %>%
   geom_hline(yintercept = 150, linetype = "dashed", color = "blue") +
   geom_hline(yintercept = 200, linetype = "dashed", color = "blue") +
   scale_color_manual(values = flag_colors) +
-  labs(title = "WGBT Effect on Completion Time by Age and Sex",
+  labs(title = "Figure 6: WGBT Effect on Completion Time by Age and Sex",
        x = "Age",
        y = "Percenatge of Completion Time",
        color = "Flag") + 
@@ -369,7 +367,7 @@ Next, let's check the rest of the weather variables. `RH` is the relative humidi
 
 Since all of those variables are continuous, we set two plots for each of them. The first plot is the boxplot used to show the effect on gender. The weather variable is set as the x-axis, and the completion time percentage is set as the y-axis. The color of the box represents different gender. The second plot is the scatter plot used to show the effect on age. The setting of x-axis and y-axis is same as the first plot. The color of the point represents different age groups. In both of the plots, we also add a linear regression line to show the trend of the data, the slope of the regression line represents the effect of the weather variable on completion time.
 
-For the `RH` variable, we observed a roughly flat trend for both male and female runners, which means the `RH` level has little effect on completion time. And the gap between the regression lines for different gender groups is relatively small, which means the effect of `RH` level on completion time is similar for different gender. For different age groups, we found the trend stays flat for most of the age groups, except for the 80-99 age group, which has a slightly decreasing trend. This suggests the higher the age, the less effect the `RH` level has on completion time, which is not matching with common sense. This might be due to the small number of participants in the 80-99 age group, causing the result to be deviated. For the `SR` and `Wind` variable, we observed a similar pattern in `RH`.
+For the `RH` variable, we observed a roughly flat trend for both male and female runners, which means the `RH` level has little effect on completion time. And the gap between the regression lines for different gender groups is relatively small, which means the effect of `RH` level on completion time is similar for different gender. For different age groups, we found the trend stays flat for most of the age groups, except for the 80-99 age group, which has a slightly decreasing trend. This suggests the higher the age, the less effect the `RH` level has on completion time, which is not matching with common sense. This might be due to the small number of participants in the 80-99 age group, causing the result to be deviated.
 
 ```{r weather_effect, include=FALSE}
 age_group_colors <- c("0-9" = "#1b9e77", 
@@ -488,7 +486,7 @@ rh_effect <- (RH_sex | RH_age) +
   plot_layout(guides = "collect", axis_titles = "collect") &
   theme(legend.position = 'bottom') &
   plot_annotation(
-    title = "RH Effect on Marathon Performance", 
+    title = "Figure 7: RH Effect on Marathon Performance", 
     theme = theme(
       plot.title = element_text(size = 15, face = "bold")
       )
@@ -498,12 +496,14 @@ rh_effect
 
 ```
 
+For the `SR` and `Wind` variable, we observed a similar pattern in `RH`.
+
 ```{r wind_effect, fig.width = 15, fig.height = 8}
 wind_effect <- (Wind_sex | Wind_age) +
   plot_layout(guides = "collect", axis_titles = "collect") &
   theme(legend.position = 'bottom') &
   plot_annotation(
-    title = "Wind Effect on Marathon Performance", 
+    title = "Figure 8: Wind Effect on Marathon Performance", 
     theme = theme(
       plot.title = element_text(size = 15, face = "bold")
       )
@@ -518,7 +518,7 @@ sr_effect <- (SR_sex | SR_age) +
   plot_layout(guides = "collect", axis_titles = "collect") &
   theme(legend.position = 'bottom') &
   plot_annotation(
-    title = "SR Effect on Marathon Performance", 
+    title = "Figure 9: SR Effect on Marathon Performance", 
     theme = theme(
       plot.title = element_text(size = 15, face = "bold")
       )
@@ -620,23 +620,50 @@ Model_{WBGT} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times WBGT + \beta_2 \times
 \end{aligned}
 $$
 
+From the results above, we can tell that none of the weather variables has different effect among genders, however, they do tend to have different effect among different age groups. In order to reflect the total effect, we combine those models into a general model.
+
 ```{r general_model_wbgt}
 # General model with WBGT
-general_model_wbgt <- glm(CR_PERCENTAGE ~ RH + SR + Wind + WBGT + Sex + Age, data = marathon_data)
-kable(summary(general_model_wbgt)$coefficients, caption = "Model with WBGT Coefficients")
+general_model <- glm(CR_PERCENTAGE ~ RH + SR + Wind + WBGT + Sex + Age + RH * Age + SR * Age + Wind * Age + WBGT * Age, data = marathon_data)
+kable(summary(general_model)$coefficients, caption = "General Model Coefficients")
 
 ```
 
-```{r general_model_flag}
-# General model with flag
-general_model_flag <- glm(CR_PERCENTAGE ~ RH + SR + Wind + Flag + Sex + Age, data = marathon_data)
-kable(summary(general_model_flag)$coefficients, caption = "Model with Flag Coefficients")
+$$
+\begin{aligned}
+Model_{general_1} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times RH + \beta_2 \times SR + \beta_3 \times Wind + \beta_4 \times WBGT \\
+&+ \beta_5 \times Sex + \beta_6 \times Age \\
+&+ \beta_7 \times RH \times Age + \beta_8 \times SR \times Age + \beta_9 \times Wind \times Age + \beta_{10} \times WBGT \times Age \\
+& = \beta_0 + \beta_5 \times Sex + \beta_6 \times Age \\
+&+ (\beta_1 + \beta_7 \times Age) \times RH + (\beta_2 + \beta_8 \times Age) \times SR \\
+&+ (\beta_3 + \beta_9 \times Age) \times Wind + (\beta_4 + \beta_{10} \times Age) \times WBGT \\
+& = -69.4308 -4.8122 \times Sex + 2.5651 \times Age \\
+&+ (0.2727 -0.0063 \times Age) \times RH + (0.0434 -0.0011 \times Age) \times SR \\
+&+ (-0.3553 + 0.0071 \times Age) \times Wind + (0.6903 -0.0034 \times Age) \times WBGT
+\end{aligned}
+$$
 
-```
+As we looking at the interaction term, we can easily find out the weather variable that has the greatest impact on runners performance. Considering from the weather condition, when runners have the same age, the `WBGT` variable has the greatest impact on completion percentage, with a 0.6903 percent increase plus -0.0034 age adjustment for each unit increase in `WBGT`. Considering from the ageing effect, the `Wind` variable has the greatest impact on completion percentage, with a 0.0071 age adjustment.
 
 # Discussion
 
+In this report, we analyzed the effect of inner factors (age, sex) and outer factors (weather variables) on marathon performance. We firstly conducted exploratory data analysis to explore the potential relationship between performance and weather conditions, and obtained some preliminary observation results, then we built linear regression models to quantify the effect of weather variables on marathon performance. We analyzed the effect of weather variables separately and combined them into a general model to reflect the total effect.
+
+We found that although male and female runners have objectivly different race performance that male tend to run faster than female, the weather condition does not have anything to do with it, meaning that the difference in performance between male and female is due to gender itself. However, the weather condition does have different effect on different age. The `WBGT` variable has the greatest impact on completion percentage, with a 0.6903 percent increase plus -0.0034 age adjustment for each unit increase in `WBGT`, while the rest of the weather variables have a relatively small impact on performance.
+
+Although we have comprehensively analyzed the effect of weather variables on marathon performance, there are still some limitations in our analysis. For instance, the dataset we used only contains the weather variables, and we did not consider other factors that may affect marathon performance, such as training, nutrition, and health status. A more reasonable way is to group runners by their performance and analyze the weather condition of each group. However, the data is already grouped by age and race, we can not further group them by performance. To further improve the analysis, we shall collect more data and consider more factors that may affect marathon performance.
+
 # References
+
+1. Ely, B. R., Cheuvront, S. N., Kenefick, R. W., & Sawka, M. N. (2010). Aerobic performance is degraded, despite modest hyperthermia, in hot environments. Med Sci Sports Exerc, 42(1), 135-41.
+
+2. Ely, M. R., Cheuvront, S. N., Roberts, W. O., & Montain, S. J. (2007). Impact of weather on marathon-running performance. Medicine and science in sports and exercise, 39(3), 487-493.
+
+3. Kenney, W. L., & Munce, T. A. (2003). Invited review: aging and human temperature regulation. Journal of applied physiology, 95(6), 2598-2603.
+
+4. Besson, T., Macchi, R., Rossi, J., Morio, C. Y., Kunimasa, Y., Nicol, C., ... & Millet, G. Y. (2022). Sex differences in endurance running. Sports medicine, 52(6), 1235-1257.
+
+5. Yanovich, R., Ketko, I., & Charkoudian, N. (2020). Sex differences in human thermoregulation: relevance for 2020 and beyond. Physiology, 35(3), 177-184.
 
 # Code Appendix
 
