@@ -159,6 +159,8 @@ marathon_data <- marathon_data %>%
                          labels = c("0-9", "10-19", "20-29", "30-39", "40-49", 
                                     "50-59", "60-69", "70-79", "80-89", "90-99")))
 
+marathon_data$Flag <- factor(marathon_data$Flag, levels = c("White", "Green", "Yellow", "Red", "Black"))
+
 ```
 
 ## Data Quality Check
@@ -183,7 +185,7 @@ marathon_data %>%
   pivot_wider(names_from="Race", values_from = missing_percentage) %>%
   arrange(Year) %>%
   replace_na(list(Boston = 0, Chicago = 0, NYC = 0, `Twin Cities` = 0, Grandmas = 0)) %>%
-  kable(caption = "Missing Percentage of Weather Data in Each Marathon by Year")
+  kable(caption = "Missing Percentage of Weather Data in Each Race by Year")
 
 ```
 
@@ -363,7 +365,13 @@ wgbt_effect
 
 ```
 
-```{r weather_effect, fig.width = 20, fig.height = 30}
+Next, let's check the rest of the weather variables. `RH` is the relative humidity, which is the ratio of the amount of water vapor present in the air to the maximum amount that the air can hold at that temperature. `SR` is the solar radiation, which is the power received per unit area from the sun in the form of electromagnetic radiation in the wavelength range of the solar spectrum. `Wind` is the wind speed, which is the rate at which air flows past a point on the earth's surface in a unit of time.
+
+Since all of those variables are continuous, we set two plots for each of them. The first plot is the boxplot used to show the effect on gender. The weather variable is set as the x-axis, and the completion time percentage is set as the y-axis. The color of the box represents different gender. The second plot is the scatter plot used to show the effect on age. The setting of x-axis and y-axis is same as the first plot. The color of the point represents different age groups. In both of the plots, we also add a linear regression line to show the trend of the data, the slope of the regression line represents the effect of the weather variable on completion time.
+
+For the `RH` variable, we observed a roughly flat trend for both male and female runners, which means the `RH` level has little effect on completion time. And the gap between the regression lines for different gender groups is relatively small, which means the effect of `RH` level on completion time is similar for different gender. For different age groups, we found the trend stays flat for most of the age groups, except for the 80-99 age group, which has a slightly decreasing trend. This suggests the higher the age, the less effect the `RH` level has on completion time, which is not matching with common sense. This might be due to the small number of participants in the 80-99 age group, causing the result to be deviated. For the `SR` and `Wind` variable, we observed a similar pattern in `RH`.
+
+```{r weather_effect, include=FALSE}
 age_group_colors <- c("0-9" = "#1b9e77", 
                       "10-19" = "#d95f02", 
                       "20-29" = "#7570b3", 
@@ -381,7 +389,7 @@ RH_sex <- marathon_data %>%
       geom_smooth(aes(group = Sex), se = FALSE) +
       labs(title = "RH Effect on Marathon Performance by Sex",
            x = "RH",
-           y = "Completion Time") +
+           y = "Percentage of Completion Time") +
       theme_minimal() +
       theme(
         axis.text.x = element_text(angle = 90)
@@ -410,7 +418,7 @@ Wind_sex <- marathon_data %>%
       geom_smooth(aes(group = Sex), se = FALSE) +
       labs(title = "Wind Effect on Marathon Performance by Sex",
            x = "Wind",
-           y = "Completion Time") +
+           y = "Percentage of Completion Time") +
       theme_minimal() +
       theme(
         axis.text.x = element_text(angle = 90)
@@ -439,7 +447,7 @@ SR_sex <- marathon_data %>%
       geom_smooth(aes(group = Sex), se = FALSE) +
       labs(title = "SR Effect on Marathon Performance by Sex",
            x = "SR",
-           y = "Completion Time") +
+           y = "Percentage of Completion Time") +
       theme_minimal() +
       theme(
         axis.text.x = element_text(angle = 90)
@@ -463,47 +471,166 @@ SR_age <- marathon_data %>%
 
 weather_effect <- (RH_sex | RH_age) / (Wind_sex | Wind_age) / (SR_sex | SR_age) +
   plot_layout(guides = "collect", axis_titles = "collect") &
-  theme(legend.position = 'bottom')
+  theme(legend.position = 'bottom') &
+  plot_annotation(
+    title = "RH, SR and Wind Effect on Marathon Performance", 
+    theme = theme(
+      plot.title = element_text(size = 15, face = "bold")
+      )
+    )
 ggsave("../Plots/weather_effect.png", plot = weather_effect, width = 20, height = 30, dpi = 300)
 weather_effect
 
 ```
 
+```{r rh_effect, fig.width = 15, fig.height = 8}
+rh_effect <- (RH_sex | RH_age) +
+  plot_layout(guides = "collect", axis_titles = "collect") &
+  theme(legend.position = 'bottom') &
+  plot_annotation(
+    title = "RH Effect on Marathon Performance", 
+    theme = theme(
+      plot.title = element_text(size = 15, face = "bold")
+      )
+    )
+ggsave("../Plots/rh_effect.png", plot = rh_effect, width = 20, height = 30, dpi = 300)
+rh_effect
 
-```{r}
+```
+
+```{r wind_effect, fig.width = 15, fig.height = 8}
+wind_effect <- (Wind_sex | Wind_age) +
+  plot_layout(guides = "collect", axis_titles = "collect") &
+  theme(legend.position = 'bottom') &
+  plot_annotation(
+    title = "Wind Effect on Marathon Performance", 
+    theme = theme(
+      plot.title = element_text(size = 15, face = "bold")
+      )
+    )
+ggsave("../Plots/wind_effect.png", plot = wind_effect, width = 20, height = 30, dpi = 300)
+wind_effect
+
+```
+
+```{r sr_effect, fig.width = 15, fig.height = 8}
+sr_effect <- (SR_sex | SR_age) +
+  plot_layout(guides = "collect", axis_titles = "collect") &
+  theme(legend.position = 'bottom') &
+  plot_annotation(
+    title = "SR Effect on Marathon Performance", 
+    theme = theme(
+      plot.title = element_text(size = 15, face = "bold")
+      )
+    )
+ggsave("../Plots/sr_effect.png", plot = sr_effect, width = 20, height = 30, dpi = 300)
+sr_effect
+
+```
+
+## Model Building
+
+The visualization results is a good way to show the general effect or the trend of the data, however, it is not a good way to quantify the effect of the weather variables on performance. In order to quantify the effect, we use linear regression models to reflect the effect. Several models were build.
+
+Firstly, we build a model that includes the `Sex` and `Age` variables. The result shows that the `Sex` variable has a negative effect of -4.7812 on completion percentage, while the `Age` variable has a positive effect of 1.7545 on completion percentage. Both of the P-values are significant. The estimates means that males are expected to have a 4.7812 percent faster completion than female, and the completion percentage will increase by 1.7545 percent for each year increase in the `Age` variable.
+
+```{r sex_age_model}
+# sex age model
+sex_age_model <- glm(CR_PERCENTAGE ~ Sex + Age, data = marathon_data)
+kable(summary(sex_age_model)$coefficients, caption = "Sex and Age Model Coefficients")
+
+```
+
+$$
+\begin{aligned}
+Model_{sex\_age}: CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times Sex + \beta_2 \times Age \\
+& = -30.2151 -4.7812 \times Sex_{male} + 1.7545 \times Age
+\end{aligned}
+$$
+
+The `RH` model, which includes the `RH`, `Sex`, and `Age` variables as well as the interaction terms between `RH` and `Sex`, and `RH` and `Age`. The result shows that the `RH` variable has a positive effect of 0.1637 on completion percentage. Also, the `Sex` variable has a negative effect of -5.3774 on completion percentage, while the `Age` variable has a positive effect of 1.9105 on completion percentage. The P-values of all of the estimates are significant. The interaction term of `RH` and `Sex` has a positive effect of 0.0128 on completion percentage, while the interaction term of `RH` and `Age` has a negative effect of -0.0036 on completion percentage. The P-value of `RH`-`Sex` interaction term is 0.4983, which is not significant, suggesting that the `RH` effect does not differ between male and female runners. The estimate of `RH`-`Age` interaction term is significant, suggesting that the effect of `RH` on completion percentage is different for different age groups, more specifically, with same level of `RH`, runners will have an extra 0.0036 percent decrease for each year increase in the `Age`.
+
+```{r rh_model}
 # RH model
-RH_model <- glm(CR_PERCENTAGE ~ RH + Sex + Age, data = marathon_data)
+RH_model <- glm(CR_PERCENTAGE ~ RH + Sex + Age + RH * Sex + RH * Age, data = marathon_data)
 kable(summary(RH_model)$coefficients, caption = "RH Model Coefficients")
 
+```
+
+$$
+\begin{aligned}
+Model_{RH} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times RH + \beta_2 \times Sex + \beta_3 \times Age + \beta_4 \times RH \times Sex + \beta_5 \times RH \times Age \\
+& = \beta_0 + \beta_2 \times Sex + \beta_3 \times Age + (\beta_1 + \beta_4 \times Sex + \beta_5 \times Age) \times RH \\
+& = -37.1520 -5.3774 \times Sex + 1.9105 \times Age \\
+&+ (0.1637 + 0.0128 \times Sex  -0.0036 \times Age) \times RH
+\end{aligned}
+$$
+
+The `SR` model, which includes the `SR`, `Sex`, and `Age` variables as well as the interaction terms between `SR` and `Sex`, and `SR` and `Age`. The result shows that the `SR` variable has a positive effect of 0.0271 on completion percentage. Also, the `Sex` variable has a negative effect of -6.1501 on completion percentage, while the `Age` variable has a positive effect of 2.0834 on completion percentage. The P-values of all of the estimates are significant. The interaction term of `SR` and `Sex` has a positive effect of 0.0027 on completion percentage, while the interaction term of `SR` and `Age` has a negative effect of -0.0006 on completion percentage. The P-value of `SR`-`Sex` interaction term is 0.3946, which is not significant, suggesting that the `SR` effect does not differ between male and female runners. The estimate of `SR`-`Age` interaction term is significant, suggesting that the effect of `SR` on completion percentage is different for different age groups, more specifically, with same level of `SR`, runners will have an extra 0.0006 percent decrease for each year increase in the `Age`.
+
+```{r sr_model}
 # SR model
-SR_model <- glm(CR_PERCENTAGE ~ SR + Sex + Age, data = marathon_data)
+SR_model <- glm(CR_PERCENTAGE ~ SR + Sex + Age + SR * Sex + SR * Age, data = marathon_data)
 kable(summary(SR_model)$coefficients, caption = "SR Model Coefficients")
 
-# DP model
-DP_model <- glm(CR_PERCENTAGE ~ DP + Sex + Age, data = marathon_data)
-kable(summary(DP_model)$coefficients, caption = "DP Model Coefficients")
+```
 
+$$
+\begin{aligned}
+Model_{SR} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times SR + \beta_2 \times Sex + \beta_3 \times Age + \beta_4 \times SR \times Sex + \beta_5 \times SR \times Age \\
+& = \beta_0 + \beta_2 \times Sex + \beta_3 \times Age + (\beta_1 + \beta_4 \times Sex + \beta_5 \times Age) \times SR \\
+& = -44.0394 -6.1501 \times Sex + 2.0834 \times Age \\
+&+ (0.0271 + 0.0027 \times Sex -0.0006 \times Age) \times SR
+\end{aligned}
+$$
+
+The `Wind` model, which includes the `Wind`, `Sex`, and `Age` variables as well as the interaction terms between `Wind` and `Sex`, and `Wind` and `Age`. The result shows that the `Wind` variable has a negative effect of -1.0906 on completion percentage. Also, the `Sex` variable has a negative effect of -6.2381 on completion percentage, while the `Age` variable has a positive effect of 1.5773 on completion percentage. The P-values of all of the estimates are significant. The interaction term of `Wind` and `Sex` has a positive effect of 0.1449 on completion percentage, while the interaction term of `Wind` and `Age` has a positive effect of 0.01785 on completion percentage. The P-value of `Wind`-`Sex` interaction term is 0.3314, which is not significant, suggesting that the `Wind` effect does not differ between male and female runners. The estimate of `Wind`-`Age` interaction term is significant, suggesting that the effect of `Wind` on completion percentage is different for different age groups, more specifically, with same level of `Wind`, runners will have an extra 0.0178 percent increase for each year increase in the `Age`.
+
+```{r wind_model}
 # Wind model
-Wind_model <- glm(CR_PERCENTAGE ~ Wind + Sex + Age, data = marathon_data)
+Wind_model <- glm(CR_PERCENTAGE ~ Wind + Sex + Age + Wind * Sex + Wind * Age, data = marathon_data)
 kable(summary(Wind_model)$coefficients, caption = "Wind Model Coefficients")
 
-# Flag model
-Flag_model <- glm(CR_PERCENTAGE ~ Flag + Sex + Age, data = marathon_data)
-kable(summary(Flag_model)$coefficients, caption = "Flag Model Coefficients")
+```
 
+$$
+\begin{aligned}
+Model_{Wind} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times Wind + \beta_2 \times Sex + \beta_3 \times Age + \beta_4 \times Wind \times Sex + \beta_5 \times Wind \times Age \\
+& = \beta_0 + \beta_2 \times Sex + \beta_3 \times Age + (\beta_1 + \beta_4 \times Sex + \beta_5 \times Age) \times Wind \\
+& = -19.4181 -6.2381 \times Sex + 1.5773 \times Age \\
+&+ (-1.0906 + 0.14495 \times Sex + 0.0178 \times Age) \times Wind
+\end{aligned}
+$$
+
+The `WBGT` model, which includes the `WBGT`, `Sex`, and `Age` variables as well as the interaction terms between `WBGT` and `Sex`, and `WBGT` and `Age`. The result shows that the `WBGT` variable has a positive effect of 1.2692 on completion percentage. Also, the `Sex` variable has a negative effect of -4.4349 on completion percentage, while the `Age` variable has a positive effect of 1.9852 on completion percentage. The P-values of all of the estimates are significant. The interaction term of `WBGT` and `Sex` has a negative effect of -0.0286 on completion percentage, while the interaction term of `WBGT` and `Age` has a negative effect of -0.0174 on completion percentage. The P-value of `WBGT`-`Sex` interaction term is 0.7915, which is not significant, suggesting that the `WBGT` effect does not differ between male and female runners. The estimate of `WBGT`-`Age` interaction term is significant, suggesting that the effect of `WBGT` on completion percentage is different for different age groups, more specifically, with same level of `WBGT`, runners will have an extra 0.0174 percent decrease for each year increase in the `Age`.
+
+```{r wbgt_model}
 # WBGT model
-WBGT_model <- glm(CR_PERCENTAGE ~ WBGT + Sex + Age, data = marathon_data)
+WBGT_model <- glm(CR_PERCENTAGE ~ WBGT + Sex + Age + WBGT * Sex + WBGT * Age, data = marathon_data)
 kable(summary(WBGT_model)$coefficients, caption = "WBGT Model Coefficients")
 
 ```
 
-```{r}
-# linear model
-lm_model_1 <- glm(CR_PERCENTAGE ~ RH + SR + DP + Wind + WBGT + Sex + Age, data = marathon_data)
-kable(summary(lm_model_1)$coefficients, caption = "Model with WBGT Coefficients")
+$$
+\begin{aligned}
+Model_{WBGT} : CR_{PERCENTAGE} &= \beta_0 + \beta_1 \times WBGT + \beta_2 \times Sex + \beta_3 \times Age + \beta_4 \times WBGT \times Sex + \beta_5 \times WBGT \times Age \\
+& = \beta_0 + \beta_2 \times Sex + \beta_3 \times Age + (\beta_1 + \beta_4 \times Sex + \beta_5 \times Age) \times WBGT \\
+& = -46.8933 -4.4349 \times Sex + 1.9852 \times Age \\
+&+ (1.2692 -0.0286 \times Sex -0.0174 \times Age) \times WBGT
+\end{aligned}
+$$
 
-lm_mode_2 <- glm(CR_PERCENTAGE ~ RH + SR + DP + Wind + Flag + Sex + Age, data = marathon_data)
-kable(summary(lm_mode_2)$coefficients, caption = "Model with Flag Coefficients")
+```{r general_model_wbgt}
+# General model with WBGT
+general_model_wbgt <- glm(CR_PERCENTAGE ~ RH + SR + Wind + WBGT + Sex + Age, data = marathon_data)
+kable(summary(general_model_wbgt)$coefficients, caption = "Model with WBGT Coefficients")
+
+```
+
+```{r general_model_flag}
+# General model with flag
+general_model_flag <- glm(CR_PERCENTAGE ~ RH + SR + Wind + Flag + Sex + Age, data = marathon_data)
+kable(summary(general_model_flag)$coefficients, caption = "Model with Flag Coefficients")
 
 ```
 
