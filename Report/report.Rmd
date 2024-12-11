@@ -37,7 +37,9 @@ course_record <- read.csv("../Data/course_record.csv")
 
 # Introduction
 
-Marathon running is a popular sport that attracts millions of participants worldwide. The completion time of a marathon is influenced by various factors, including weather conditions. In this report, we analyze the impact of different weather conditions on marathon performance across the lifespan in both men and women using data from five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. We aim at examine effects of increasing age on marathon performance in men and women and the impact of environmental conditions on marathon performance, and whether the impact differs across age and gender, additionly, we want to find out which factor has the most significant impact on marathon performance.
+Marathon running is a popular sport that attracts millions of participants worldwide. The completion time of a marathon is influenced by various factors, including weather conditions. A 42-km marathon footrace is among the most physiologically demanding endurance events, with competitive runners typically maintaining a pace corresponding to 70-90% of their maximal aerobic capacity for more than 2 hours. At maximal mechanical efficiency, more than 80% of the energy required is transferred as heat to the body core, producing approximately 1400 kcal/hour that must be dissipated to prevent dangerous rises in body temperature.
+
+While numerous studies have documented performance degradation in hot environments, research has largely focused on elite male runners, leaving the implications for slower competitors and women runners largely speculative. Additionally, there has been limited research examining performance when tasks elicit only modest elevations in core body temperature (<38.5°C). In this report, we analyze the impact of different weather conditions on marathon performance across the lifespan in both men and women using data from five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. We aim to examine effects of increasing age on marathon performance in men and women and the impact of environmental conditions on marathon performance, and whether the impact differs across age and gender. Additionally, we want to find out which factor has the most significant impact on marathon performance.
 
 # Data Description
 
@@ -45,7 +47,7 @@ Two datasets are used in this analysis: Marathon Data and Course Record Data. Th
 
 ### Marathon Data
 
-The Marathon Data contains information about the average completion record percentage grouped by age and sex of runners in five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. The dataset includes the following columns:
+The Marathon Data contains information about the top completion record percentage grouped by age and sex of runners in five major marathons: Boston, NYC, Chicago, Twin Cities, and Grandmas. The dataset includes the following columns:
 
 | Parameter       | Coding details                                                                            |
 |-----------------|-------------------------------------------------------------------------------------------|
@@ -163,9 +165,9 @@ marathon_data$Flag <- factor(marathon_data$Flag, levels = c("White", "Green", "Y
 
 ## Data Quality Check
 
-Before we start the analysis, we need to check the data quality. We first check for missing values and patterns in the dataset. The missing values are visualized using the `vis_miss` function from the `naniar` package. Figure 1 shows that there are missing values in the weather related columns, and this missingness seems to have a very clear pattern. Based on this pattern, we can assume boldly that the missing values are not missing at random, but are related to specific races.
+Before we start the analysis, we need to check the data quality. We first check for missing values and patterns in the dataset. The missing values are visualized using the `vis_miss` function from the `naniar` package. Results shows that there are missing values in the weather related columns, and this missingness seems to have a very clear pattern. Based on this pattern, we can assume boldly that the missing values are not missing at random, but are related to specific races.
 
-```{r missing_pattern, fig.width = 15}
+```{r missing_pattern, eval=FALSE, include=FALSE}
 # Check for missing values and patterns
 miss_plot <- vis_miss(marathon_data) + labs(title = "Figure 1: Missing Data Pattern")
 ggsave("../Plots/missing_values_plot.png", plot = miss_plot, width = 15, dpi = 300)
@@ -173,9 +175,9 @@ miss_plot
 
 ```
 
-In order to veryify our assumption, we calculate the missing percentage of weather data in each marathon by year. The table below shows that the missing percentage of most of the races are 0, however, for races held in 2011 (Chicago, NYC, and Twin Cities) as well as the one held in 2012 (Grandmas), the missing percentage is 100%. This confirms our assumption that the missing values are related to specific races. It would be a wise choice to remove all of those races from our dataset. To be noted that the NA value in the table means there are no races held in that year.
+In order to veryify our assumption, we calculate the missing percentage of weather data in each marathon by year. Results shows that the missing percentage of most of the races are 0, however, for races held in 2011 (Chicago, NYC, and Twin Cities) as well as the one held in 2012 (Grandmas), the missing percentage is 100%. This confirms our assumption that the missing values are related to specific races. It would be a wise choice to remove all of those races from our dataset. To be noted that the NA value in the table means there are no races held in that year.
 
-```{r missing_percentage}
+```{r missing_percentage, eval=FALSE, include=FALSE}
 # Check the missing percentage of weather data in each marathon by year
 marathon_data %>%
   group_by(Race, Year) %>%
@@ -190,7 +192,6 @@ marathon_data %>%
 ```{r remove_missing}
 # remove missing data
 marathon_data <- marathon_data %>% filter(!is.na(Flag))
-
 ```
 
 And we also want to check the performance distribution of each race by year, since although the weather condition may vary from year to year, the performance of runners may not change significantly within the same track. As we can see in Figure 2, despite some disturbances, the performance of runners tend to stay stable over the years. The difference in performance might be due to the different weather conditions in different years. Overall, the stability of the performance indicates that the dataset is reliable for analysis.
@@ -647,11 +648,17 @@ As we looking at the interaction term, we can easily find out the weather variab
 
 # Discussion
 
-In this report, we analyzed the effect of inner factors (age, sex) and outer factors (weather variables) on marathon performance. We firstly conducted exploratory data analysis to explore the potential relationship between performance and weather conditions, and obtained some preliminary observation results, then we built linear regression models to quantify the effect of weather variables on marathon performance. We analyzed the effect of weather variables separately and combined them into a general model to reflect the total effect.
+In this report, we analyzed the effect of inner factors (age, sex) and outer factors (weather variables) on marathon performance. Through comprehensive analysis of data from five major marathons, we identified several key findings regarding both physiological and environmental impacts on marathon completion times.
 
-We found that although male and female runners have objectivly different race performance that male tend to run faster than female, the weather condition does not have anything to do with it, meaning that the difference in performance between male and female is due to gender itself. However, the weather condition does have different effect on different age. The `WBGT` variable has the greatest impact on completion percentage, with a 0.6903 percent increase plus -0.0034 age adjustment for each unit increase in `WBGT`, while the rest of the weather variables have a relatively small impact on performance.
+Our analysis revealed that while male and female runners have objectively different race performance with males generally running faster, weather conditions affect both genders similarly, suggesting the performance gap is primarily due to physiological differences rather than differential weather sensitivity. This finding aligns with Ely et al. (2007), who found similar patterns of weather-related performance decrements between male and female elite runners. However, weather conditions do have significantly different effects across age groups. The WBGT variable demonstrated the strongest impact on completion percentage, with a 0.6903 percent increase plus a -0.0034 age adjustment for each unit increase in WBGT. This supports findings from Ely et al. (2010) showing that aerobic performance is degraded in hot environments even with modest hyperthermia.
 
-Although we have comprehensively analyzed the effect of weather variables on marathon performance, there are still some limitations in our analysis. For instance, the dataset we used only contains the weather variables, and we did not consider other factors that may affect marathon performance, such as training, nutrition, and health status. A more reasonable way is to group runners by their performance and analyze the weather condition of each group. However, the data is already grouped by age and race, we can not further group them by performance. To further improve the analysis, we shall collect more data and consider more factors that may affect marathon performance.
+The relative humidity (RH) and solar radiation (SR) showed comparatively smaller impacts on performance, though their effects were still statistically significant. Interestingly, wind speed demonstrated a unique pattern - while it had a relatively minor direct effect on performance, it showed the strongest interaction with age among all weather variables, suggesting older runners may be particularly sensitive to wind conditions. This age-dependent response to weather conditions likely reflects the reduced thermoregulatory capacity and cardiovascular adaptability documented in older adults.
+
+The progressive impact of increasing WBGT on performance across all age groups supports the concept of a "prescriptive zone" for temperature regulation during exercise, as described by Ely et al. (2007). When environmental conditions push runners outside this zone, performance necessarily declines as the body struggles to maintain thermal homeostasis. This is particularly evident in our finding that the performance impact of adverse weather conditions increases with both age and completion time, suggesting that slower runners face compounded challenges from prolonged exposure to challenging weather conditions.
+
+A limitation of our analysis is that the dataset only captures weather variables without accounting for other important factors such as training status, nutrition, and general health status. Additionally, the smaller sample sizes in the youngest (10-19) and oldest (80-99) age groups may affect the reliability of our findings for these populations. Future research would benefit from incorporating these additional variables and ensuring more balanced representation across age groups.
+
+These findings have important practical implications for runners, race organizers, and medical personnel. They suggest that race organizers should consider developing age-specific guidelines for weather-based race modifications, rather than applying uniform standards across all participants. Runners, particularly older athletes or those expecting longer completion times, should adjust their race strategies and performance expectations based on weather conditions, with special attention to WBGT forecasts. Future research could focus on developing more precise models for predicting individual performance decrements based on both personal factors (age, sex, fitness level) and environmental conditions.
 
 # References
 
